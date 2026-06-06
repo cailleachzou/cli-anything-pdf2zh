@@ -1,0 +1,14 @@
+# REPL session — drop into `cli-anything-pdf2zh` and paste these lines
+# one at a time, or feed the file via stdin:
+
+#   cli-anything-pdf2zh < repl_workflow.txt
+
+services
+use minimax
+lang en zh
+pdf paper.pdf
+out ./out
+translate
+status
+save my-workflow.json
+exit
