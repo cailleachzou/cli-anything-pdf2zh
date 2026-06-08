@@ -10,7 +10,7 @@ Subcommand layout::
     ├── config    list|get|set|delete|set-key # ~/.config/PDFMathTranslate
     ├── inspect   <pdf>                       # pymupdf/pdfminer read
     ├── cache     summary|list|clear          # SQLite cache
-    ├── patch     status|install|uninstall    # MiniMax translator patch
+    ├── patch     status|install|uninstall    # Xiaomi MiMo translator patch
     ├── mcp       --stdio|--sse               # pass-through to EXE --mcp
     └── repl                                   # default when no subcommand
 
@@ -186,7 +186,7 @@ def info(ctx: Ctx, pdf: str, as_json: bool) -> None:
 @click.option("-o", "--output", "output_dir", required=True, help="Output directory.")
 @click.option("--lang-in",  default="en", show_default=True, help="Source language code.")
 @click.option("--lang-out", default="zh", show_default=True, help="Target language code.")
-@click.option("-s", "--service", default="minimax", show_default=True, help="Translator service (e.g. minimax, google, openai).")
+@click.option("-s", "--service", default="mimo", show_default=True, help="Translator service (e.g. mimo, google, openai).")
 @click.option("-t", "--thread", default=4, show_default=True, type=int, help="Worker threads.")
 @click.option("--pages", default="", help="Page range, e.g. 1-3,5,7-9.")
 @click.option("--babeldoc", is_flag=True, default=False, help="Use the experimental babeldoc backend.")
@@ -278,7 +278,7 @@ def translate(
 @click.option("-o", "--output", "output_dir", required=True, help="Output directory.")
 @click.option("--lang-in",  default="en", show_default=True)
 @click.option("--lang-out", default="zh", show_default=True)
-@click.option("-s", "--service", default="minimax", show_default=True)
+@click.option("-s", "--service", default="mimo", show_default=True)
 @click.option("-t", "--thread", default=4, show_default=True, type=int)
 @click.option("--exe", "exe_path", default=None)
 @click.option("--json", "as_json", is_flag=True, default=False, help="JSON output.")
@@ -432,7 +432,7 @@ def config_delete(key: str) -> None:
 @click.argument("env_key")
 @click.argument("env_value")
 def config_set_key(translator: str, env_key: str, env_value: str) -> None:
-    """Set a single env var on a translator, e.g. ``minimax MINIMAX_API_KEY ...``."""
+    """Set a single env var on a translator, e.g. ``mimo MIMO_API_KEY ...``."""
     config_mod.set_translator_key(translator, env_key, env_value)
     click.echo(f"  ✓ {translator}.{env_key} set")
 
@@ -441,7 +441,7 @@ def config_set_key(translator: str, env_key: str, env_value: str) -> None:
 @click.argument("name")
 @click.option("--json", "as_json", is_flag=True, default=False)
 def config_show_translator(name: str, as_json: bool) -> None:
-    """Show envs for one translator (e.g. ``minimax``)."""
+    """Show envs for one translator (e.g. ``mimo``)."""
     t = config_mod.get_translator(name)
     if t is None:
         if _want_json(as_json):
@@ -549,12 +549,12 @@ def cache_clear(engine: Optional[str], as_json: bool) -> None:
         skin.success(f"deleted {res['deleted']} entries from {res['scope']!r} scope")
 
 
-# ── patch (MiniMax translator) ────────────────────────────────────────
+# ── patch (Xiaomi MiMo translator) ────────────────────────────────────
 
 
 @cli.group()
 def patch() -> None:
-    """Install / uninstall the MiniMax translator into the bundled EXE."""
+    """Install / uninstall the Xiaomi MiMo translator into the bundled EXE."""
 
 
 @patch.command("status")
@@ -595,7 +595,7 @@ def patch_install(exe_path: Optional[str], no_backup: bool, as_json: bool) -> No
         skin = ReplSkin("pdf2zh")
         if res.get("installed"):
             skin.success(
-                f"MiniMax translator installed "
+                f"Xiaomi MiMo translator installed "
                 f"(imports={res['imports_added']}, registrations={res['registrations_added']})"
             )
         else:
@@ -621,7 +621,7 @@ def patch_uninstall(exe_path: Optional[str], no_restore: bool, as_json: bool) ->
     else:
         skin = ReplSkin("pdf2zh")
         if res.get("uninstalled"):
-            skin.success(f"MiniMax translator removed ({res.get('method')})")
+            skin.success(f"Xiaomi MiMo translator removed ({res.get('method')})")
         else:
             skin.info(f"no-op: {res.get('reason')}")
 
@@ -657,12 +657,12 @@ def repl(ctx: Ctx, exe_path: Optional[str]) -> None:
     skin = ctx.skin
     skin.print_banner()
 
-    # Hint about MiniMax
+    # Hint about MiMo
     try:
         s = patch_mod.status(exe_path)
         if not s.get("installed"):
             skin.info(
-                "MiniMax translator not installed. Run: "
+                "Xiaomi MiMo translator not installed. Run: "
                 "cli-anything-pdf2zh patch install"
             )
     except RuntimeError:
@@ -784,7 +784,7 @@ def repl(ctx: Ctx, exe_path: Optional[str]) -> None:
                 paths = patch_mod.resolve_bundle_paths(exe_path)
                 res = patch_mod.install(paths)
                 if res.get("installed"):
-                    skin.success("MiniMax translator installed")
+                    skin.success("Xiaomi MiMo translator installed")
                 else:
                     skin.info(f"no-op: {res.get('reason')}")
             except Exception as e:  # noqa: BLE001
@@ -798,14 +798,14 @@ def _repl_help() -> str:
   Commands:
     status                 show session state as JSON
     services               list all available translators
-    use <service>          set the translator (e.g. use minimax)
+    use <service>          set the translator (e.g. use mimo)
     lang <in> <out>        set languages (e.g. lang en zh)
     pdf <path>             set the current input PDF
     out <path>             set the output directory
     translate              run translation on current pdf → out
     save [path]            save session to a project file
     open <path>            load a project file
-    patch-install          one-shot install the MiniMax translator
+    patch-install          one-shot install the Xiaomi MiMo translator
     version                show pdf2zh.exe version
     help, ?                this message
     exit, quit             leave the REPL

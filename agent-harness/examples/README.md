@@ -6,7 +6,7 @@ End-to-end usage examples for `cli-anything-pdf2zh`.
 
 ```bash
 #!/usr/bin/env bash
-# Translate a single PDF using the MiniMax service.
+# Translate a single PDF using the Xiaomi MiMo service.
 # Usage: ./translate-one.sh path/to/paper.pdf
 
 set -euo pipefail
@@ -16,7 +16,7 @@ OUT_DIR="./out/$(basename "${PDF%.*}")"
 mkdir -p "$OUT_DIR"
 
 cli-anything-pdf2zh translate "$PDF" -o "$OUT_DIR" \
-    --service minimax \
+    --service mimo \
     --lang-in en --lang-out zh \
     --ignore-cache
 
@@ -35,7 +35,7 @@ set -euo pipefail
 
 SRC="${1:?usage: $0 <src-dir> <out-dir>}"
 DST="${2:?usage: $0 <src-dir> <out-dir>}"
-SERVICE="${SERVICE:-minimax}"
+SERVICE="${SERVICE:-mimo}"
 
 cli-anything-pdf2zh batch "$SRC" -o "$DST" \
     --service "$SERVICE" \
@@ -68,7 +68,7 @@ result = subprocess.run(
         "--json",
         "translate", str(PDF),
         "-o", str(OUT),
-        "--service", "minimax",
+        "--service", "mimo",
         "--lang-in", "en", "--lang-out", "zh",
         "--ignore-cache",
     ],
@@ -90,7 +90,7 @@ Drop into a REPL with `cli-anything-pdf2zh` and paste:
 
 ```text
 services
-use minimax
+use mimo
 lang en zh
 pdf paper.pdf
 out ./out
@@ -103,24 +103,24 @@ exit
 ## 5. `install-patch.ps1` — first-time setup (PowerShell)
 
 ```powershell
-# Install the MiniMax translator patch into the bundled EXE.
+# Install the Xiaomi MiMo translator patch into the bundled EXE.
 # Run once per machine.
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "Installing MiniMax translator patch..."
+Write-Host "Installing Xiaomi MiMo translator patch..."
 cli-anything-pdf2zh patch install
 
 Write-Host "Setting up API key (paste your key when prompted)..."
-$key = Read-Host -Prompt "MINIMAX_API_KEY" -AsSecureString
+$key = Read-Host -Prompt "MIMO_API_KEY" -AsSecureString
 $plain = [Runtime.InteropServices.Marshal]::PtrToStringAuto(
     [Runtime.InteropServices.Marshal]::SecureStringToBSTR($key))
 
-cli-anything-pdf2zh config set-key minimax MINIMAX_API_KEY $plain
-cli-anything-pdf2zh config set-key minimax MINIMAX_BASE_URL https://api.minimaxi.com/v1
-cli-anything-pdf2zh config set-key minimax MINIMAX_MODEL MiniMax-Text-01
+cli-anything-pdf2zh config set-key mimo MIMO_API_KEY $plain
+cli-anything-pdf2zh config set-key mimo MIMO_BASE_URL https://token-plan-cn.xiaomimimo.com/v1
+cli-anything-pdf2zh config set-key mimo MIMO_MODEL mimo-v2.5-pro
 
 Write-Host "Verifying..."
-cli-anything-pdf2zh config show-translator minimax
+cli-anything-pdf2zh config show-translator mimo
 cli-anything-pdf2zh patch status
 ```

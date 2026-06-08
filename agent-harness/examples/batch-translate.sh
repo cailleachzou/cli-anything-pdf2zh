@@ -6,7 +6,7 @@ set -euo pipefail
 
 SRC="${1:?usage: $0 <src-dir> <out-dir>}"
 DST="${2:?usage: $0 <src-dir> <out-dir>}"
-SERVICE="${SERVICE:-minimax}"
+SERVICE="${SERVICE:-mimo}"
 
 cli-anything-pdf2zh batch "$SRC" -o "$DST" \
     --service "$SERVICE" \

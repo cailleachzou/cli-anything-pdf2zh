@@ -6,9 +6,9 @@
 
 `cli-anything-pdf2zh` wraps the PDFMathTranslate Windows EXE bundle
 (`pdf2zh.exe`) as a stateful, JSON-friendly command-line interface. It
-also ships a **MiniMax translator patch** that injects a new translator
+also ships a **Xiaomi MiMo translator patch** that injects a new translator
 class into the bundled `translator.py`, so the EXE accepts
-`--service minimax` and consumes `MINIMAX_*` env vars.
+`--service mimo` and consumes `MIMO_*` env vars.
 
 ---
 
@@ -23,7 +23,7 @@ class into the bundled `translator.py`, so the EXE accepts
   pdf2zh standard config file)
 * **SQLite cache inspection** for `~/.cache/pdf2zh/cache.v1.db`
 * **PDF inspection** via pymupdf / pdfminer
-* **MiniMax translator patch** — install / uninstall / status
+* **Xiaomi MiMo translator patch** — install / uninstall / status
 
 ---
 
@@ -61,7 +61,7 @@ pip install -e .
 
 The `cli-anything-pdf2zh` command will be on your PATH.
 
-### 3. (Optional) Install the MiniMax translator patch
+### 3. (Optional) Install the Xiaomi MiMo translator patch
 
 ```bash
 cli-anything-pdf2zh patch install
@@ -74,10 +74,10 @@ it twice is a no-op.
 ### 4. (Optional) Configure your translator API keys
 
 ```bash
-# For MiniMax
-cli-anything-pdf2zh config set-key minimax MINIMAX_API_KEY sk-cp-...
-cli-anything-pdf2zh config set-key minimax MINIMAX_BASE_URL https://api.minimaxi.com/v1
-cli-anything-pdf2zh config set-key minimax MINIMAX_MODEL MiniMax-Text-01
+# For Xiaomi MiMo (API key falls back to ANTHROPIC_AUTH_TOKEN env var)
+cli-anything-pdf2zh config set-key mimo MIMO_API_KEY <key>
+cli-anything-pdf2zh config set-key mimo MIMO_BASE_URL https://token-plan-cn.xiaomimimo.com/v1
+cli-anything-pdf2zh config set-key mimo MIMO_MODEL mimo-v2.5-pro
 
 # For OpenAI
 cli-anything-pdf2zh config set-key openai OPENAI_API_KEY sk-...
@@ -95,8 +95,8 @@ Use `config show-translator <name>` to verify (secret values are masked).
 # English to Chinese with Google (no API key needed)
 cli-anything-pdf2zh translate paper.pdf -o out/ --service google
 
-# English to Japanese with MiniMax
-cli-anything-pdf2zh translate paper.pdf -o out/ --service minimax --lang-in en --lang-out ja
+# English to Japanese with MiMo
+cli-anything-pdf2zh translate paper.pdf -o out/ --service mimo --lang-in en --lang-out ja
 
 # Translate pages 1-3 only
 cli-anything-pdf2zh translate book.pdf -o out/ --pages 1-3
@@ -115,8 +115,8 @@ $ cli-anything-pdf2zh
   ✓ current_pdf = paper.pdf
   out ./translated
   ✓ output_dir = ./translated
-  use minimax
-  ✓ service = minimax
+  use mimo
+  ✓ service = mimo
   lang en zh
   ✓ lang = en -> zh
   translate
@@ -133,7 +133,7 @@ $ cli-anything-pdf2zh --json services list
 [
   {"name": "google", "kind": "free", "key": "no", "desc": "Google Translate (web endpoint)"},
   ...
-  {"name": "minimax", "kind": "key", "key": "yes", "desc": "MiniMax (added by harness patch)"}
+  {"name": "mimo", "kind": "key", "key": "yes", "desc": "Xiaomi MiMo (added by harness patch)"}
 ]
 
 $ cli-anything-pdf2zh --json translate paper.pdf -o out/ --service google
@@ -153,7 +153,7 @@ Save a session to a JSON file and replay later:
 
 ```bash
 # Save
-cli-anything-pdf2zh translate paper.pdf -o out/ --service minimax --lang-in en --lang-out zh
+cli-anything-pdf2zh translate paper.pdf -o out/ --service mimo --lang-in en --lang-out zh
 # (in REPL): save project.json
 
 # Load
@@ -169,8 +169,8 @@ cli-anything-pdf2zh info paper.pdf
 
 # Inspect the SQLite translation cache
 cli-anything-pdf2zh cache summary
-cli-anything-pdf2zh cache list --engine minimax --limit 10
-cli-anything-pdf2zh cache clear --engine minimax
+cli-anything-pdf2zh cache list --engine mimo --limit 10
+cli-anything-pdf2zh cache clear --engine mimo
 ```
 
 ---
@@ -199,7 +199,7 @@ agent-harness/
 │       │   ├── pdf2zh_backend.py   # subprocess wrapper around pdf2zh.exe
 │       │   └── repl_skin.py
 │       ├── patch/
-│       │   └── __init__.py   # MiniMaxTranslator source string
+│       │   └── __init__.py   # MiMoTranslator source string
 │       ├── skills/SKILL.md   # auto-generated AI-agent skill file
 │       └── tests/
 │           ├── TEST.md
@@ -232,7 +232,7 @@ py -3 -m pytest cli_anything/pdf2zh/tests/test_full_e2e.py -v
 CLI_ANYTHING_FORCE_INSTALLED=1 py -3 -m pytest cli_anything/pdf2zh/tests/ -v -s
 
 # Skip network-dependent tests
-PDF2ZH_SKIP_GOOGLE=1 PDF2ZH_SKIP_MINIMAX=1 py -3 -m pytest -v
+PDF2ZH_SKIP_GOOGLE=1 PDF2ZH_SKIP_MIMO=1 py -3 -m pytest -v
 ```
 
 ---
@@ -240,7 +240,7 @@ PDF2ZH_SKIP_GOOGLE=1 PDF2ZH_SKIP_MINIMAX=1 py -3 -m pytest -v
 ## Security & secrets
 
 The harness reads / writes `~/.config/PDFMathTranslate/config.json` and
-the `MINIMAX_API_KEY` (or any other translator key) you put there. Secret
+the `MIMO_API_KEY` (or any other translator key) you put there. Secret
 values are masked in `config show-translator` output.
 
 **Never commit `config.json` to git.** Add it to your global `.gitignore`.

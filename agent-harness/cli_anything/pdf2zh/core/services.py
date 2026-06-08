@@ -17,7 +17,7 @@ from typing import Dict, List, Optional
 #
 # When the EXE is not installed, we still want `services list` to return
 # useful info, so we hard-code the known list. If a new translator is added
-# to the bundle (e.g. by the MiniMax patch) and the bundle is reachable,
+# to the bundle (e.g. by the MiMo patch) and the bundle is reachable,
 # `discover_from_bundle()` will return the live authoritative list.
 #
 
@@ -46,7 +46,7 @@ SERVICES: List[Dict[str, str]] = [
     {"name": "deepseek",     "kind": "key",   "key": "yes", "desc": "Deepseek"},
     {"name": "openailiked",  "kind": "key",   "key": "yes", "desc": "Any OpenAI-compatible endpoint"},
     {"name": "qwenmt",       "kind": "key",   "key": "yes", "desc": "QwenMT (Aliyun DashScope)"},
-    {"name": "minimax",      "kind": "key",   "key": "yes", "desc": "MiniMax (added by harness patch)"},
+    {"name": "mimo",         "kind": "key",   "key": "yes", "desc": "Xiaomi MiMo (added by harness patch)"},
 ]
 
 

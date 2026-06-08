@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Translate a single PDF using the MiniMax service.
+# Translate a single PDF using the Xiaomi MiMo service.
 # Usage: ./translate-one.sh path/to/paper.pdf
 
 set -euo pipefail
@@ -9,7 +9,7 @@ OUT_DIR="./out/$(basename "${PDF%.*}")"
 mkdir -p "$OUT_DIR"
 
 cli-anything-pdf2zh translate "$PDF" -o "$OUT_DIR" \
-    --service minimax \
+    --service mimo \
     --lang-in en --lang-out zh \
     --ignore-cache
 

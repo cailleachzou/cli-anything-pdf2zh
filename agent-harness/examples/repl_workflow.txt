@@ -4,7 +4,7 @@
 #   cli-anything-pdf2zh < repl_workflow.txt
 
 services
-use minimax
+use mimo
 lang en zh
 pdf paper.pdf
 out ./out

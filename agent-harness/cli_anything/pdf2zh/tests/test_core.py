@@ -11,7 +11,7 @@ Each test class groups tests by module:
 * ``TestCache``             — core/cache.py
 * ``TestInspect``           — core/inspect.py
 * ``TestServices``          — core/services.py
-* ``TestPatch``             — core/patch.py (the MiniMax patch)
+* ``TestPatch``             — core/patch.py (the Xiaomi MiMo patch)
 * ``TestReplSkin``          — utils/repl_skin.py
 * ``TestTranslateIO``       — utils/pdf2zh_backend.run_translate argv builder
 """
@@ -43,8 +43,8 @@ from cli_anything.pdf2zh.core.translate import (
     translate_files,
 )
 from cli_anything.pdf2zh.patch import (
-    MINIMAX_CLASS_MARKER,
-    MINIMAX_TRANSLATOR_SOURCE,
+    MIMO_CLASS_MARKER,
+    MIMO_TRANSLATOR_SOURCE,
 )
 from cli_anything.pdf2zh.utils import pdf2zh_backend as backend
 from cli_anything.pdf2zh.utils.repl_skin import ReplSkin
@@ -113,12 +113,12 @@ class TestTranslateOptions:
     def test_session_round_trip(self):
         s = Session(
             current_pdf="C:/tmp/a.pdf",
-            options=TranslateOptions(service="minimax", lang_out="zh"),
+            options=TranslateOptions(service="mimo", lang_out="zh"),
         )
         data = s.to_dict()
         s2 = Session.from_dict(data)
         assert s2.current_pdf == s.current_pdf
-        assert s2.options.service == "minimax"
+        assert s2.options.service == "mimo"
         assert s2.options.lang_out == "zh"
         assert s2.modified is False
 
@@ -168,7 +168,7 @@ def _fake_result(
 
 
 class TestFallback:
-    """Auto-fallback from minimax → google when the default service fails."""
+    """Auto-fallback from mimo → google when the default service fails."""
 
     def test_fallback_when_default_fails(self, tmp_path, monkeypatch):
         pdf = tmp_path / "in.pdf"
@@ -178,11 +178,11 @@ class TestFallback:
 
         def fake_run(files, *, service, **_kwargs):
             calls.append(service)
-            if service == "minimax":
+            if service == "mimo":
                 return _fake_result(
-                    service="minimax",
+                    service="mimo",
                     exit_code=1,
-                    stderr_tail="MINIMAX_API_KEY missing",
+                    stderr_tail="MIMO_API_KEY missing",
                 )
             return _fake_result(
                 service="google", exit_code=0,
@@ -190,16 +190,16 @@ class TestFallback:
 
         monkeypatch.setattr(backend, "run_translate", fake_run)
 
-        opts = TranslateOptions()  # default: service=minimax
+        opts = TranslateOptions()  # default: service=mimo
         result = translate_files([str(pdf)], output_dir=str(out), options=opts)
 
         # Two attempts, in order
-        assert calls == ["minimax", "google"]
+        assert calls == ["mimo", "google"]
         # Result is the successful fallback
         assert result["fallback_used"] is True
-        assert result["fallback_from"] == "minimax"
+        assert result["fallback_from"] == "mimo"
         assert result["fallback_to"] == "google"
-        assert "MINIMAX_API_KEY" in result["fallback_reason"]
+        assert "MIMO_API_KEY" in result["fallback_reason"]
         assert result["exit_code"] == 0
 
     def test_no_fallback_when_explicit_service_fails(self, tmp_path, monkeypatch):
@@ -242,12 +242,12 @@ class TestFallback:
         result = translate_files([str(pdf)], output_dir=str(out), options=opts)
 
         # Happy path — single attempt
-        assert calls == ["minimax"]
+        assert calls == ["mimo"]
         assert result.get("fallback_used", False) is False
         assert result["exit_code"] == 0
 
     def test_fallback_google_fails_returns_failure(self, tmp_path, monkeypatch):
-        """If both minimax and google fail, return the google failure."""
+        """If both mimo and google fail, return the google failure."""
         pdf = tmp_path / "in.pdf"
         pdf.write_bytes(b"%PDF-1.4\n")
         out = tmp_path / "out"
@@ -267,13 +267,13 @@ class TestFallback:
         result = translate_files([str(pdf)], output_dir=str(out), options=opts)
 
         # Both attempted
-        assert calls == ["minimax", "google"]
+        assert calls == ["mimo", "google"]
         # Fallback ran but the second attempt also failed — return that
         assert result["fallback_used"] is True
         assert result["fallback_to"] == "google"
         assert result["exit_code"] == 1
         # fallback_reason captures WHY we fell back (the first attempt's error)
-        assert "minimax" in result["fallback_reason"]
+        assert "mimo" in result["fallback_reason"]
 
 
 # ── TestConfig ────────────────────────────────────────────────────────
@@ -287,12 +287,12 @@ class TestConfig:
         return cfg
 
     def test_set_translator_key_upserts(self, isolated_config):
-        config_mod.set_translator_key("minimax", "MINIMAX_API_KEY", "sk-test")
-        config_mod.set_translator_key("minimax", "MINIMAX_BASE_URL", "https://x")
-        t = config_mod.get_translator("minimax")
+        config_mod.set_translator_key("mimo", "MIMO_API_KEY", "sk-test")
+        config_mod.set_translator_key("mimo", "MIMO_BASE_URL", "https://x")
+        t = config_mod.get_translator("mimo")
         assert t is not None
-        assert t["envs"]["MINIMAX_API_KEY"] == "sk-test"
-        assert t["envs"]["MINIMAX_BASE_URL"] == "https://x"
+        assert t["envs"]["MIMO_API_KEY"] == "sk-test"
+        assert t["envs"]["MIMO_BASE_URL"] == "https://x"
 
     def test_set_translator_env_replaces(self, isolated_config):
         config_mod.set_translator_env("openai", {"OPENAI_API_KEY": "k1"})
@@ -346,7 +346,7 @@ class TestCache:
             [
                 ("google", "{}", "Hello", "你好"),
                 ("google", "{}", "World", "世界"),
-                ("minimax", "{}", "Foo", "酒吧"),
+                ("mimo", "{}", "Foo", "酒吧"),
             ],
         )
         conn.commit()
@@ -360,7 +360,7 @@ class TestCache:
         assert s["row_count"] == 3
         engines = {e["engine"] for e in s["top_engines"]}
         assert "google" in engines
-        assert "minimax" in engines
+        assert "mimo" in engines
 
     def test_summary_on_missing(self, tmp_path, monkeypatch):
         monkeypatch.setattr(cache_mod, "CACHE_PATH", tmp_path / "absent.db")
@@ -371,8 +371,8 @@ class TestCache:
     def test_clear_by_engine(self, temp_cache):
         res = cache_mod.clear(engine="google")
         assert res["deleted"] == 2
-        # minimax rows survive
-        assert len(cache_mod.list_entries(engine="minimax")) == 1
+        # mimo rows survive
+        assert len(cache_mod.list_entries(engine="mimo")) == 1
 
     def test_clear_all(self, temp_cache):
         res = cache_mod.clear()
@@ -428,15 +428,15 @@ class TestInspect:
 
 
 class TestServices:
-    def test_list_services_has_minimax(self):
+    def test_list_services_has_mimo(self):
         catalog = services_mod.list_services()
         names = [s["name"] for s in catalog]
-        assert "minimax" in names
+        assert "mimo" in names
         assert "google" in names
         assert "openai" in names
 
-    def test_describe_minimax(self):
-        svc = services_mod.describe_service("minimax")
+    def test_describe_mimo(self):
+        svc = services_mod.describe_service("mimo")
         assert svc is not None
         assert svc["kind"] == "key"
         assert svc["key"] == "yes"
@@ -478,10 +478,10 @@ class TestPatch:
         assert res["installed"] is True
         # The marker should be in translator.py
         text = Path(paths["translator_py"]).read_text(encoding="utf-8", errors="replace")
-        assert MINIMAX_CLASS_MARKER in text
+        assert MIMO_CLASS_MARKER in text
         # And registered in pdf2zh.py
         pz_text = Path(paths["pdf2zh_py"]).read_text(encoding="utf-8", errors="replace")
-        assert "MiniMaxTranslator" in pz_text
+        assert "MiMoTranslator" in pz_text
         assert patch_mod.is_installed(paths) is True
 
         # Idempotent install

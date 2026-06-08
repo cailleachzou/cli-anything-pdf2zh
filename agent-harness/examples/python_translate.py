@@ -23,7 +23,7 @@ result = subprocess.run(
         "-o",
         str(OUT),
         "--service",
-        "minimax",
+        "mimo",
         "--lang-in",
         "en",
         "--lang-out",

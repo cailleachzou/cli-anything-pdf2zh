@@ -4,7 +4,7 @@ This module wraps ``utils.pdf2zh_backend.run_translate`` with:
   * session-style state (current input, current output dir, current service)
   * project-file persistence (so a workflow can be saved and replayed)
   * per-call JSON-friendly result dicts
-  * a default fallback chain (minimax → google) so an unset/misconfigured
+  * a default fallback chain (mimo → google) so an unset/misconfigured
     API key degrades to a free translator instead of a hard failure
 
 The actual translation is delegated to pdf2zh.exe. The harness never tries
@@ -26,11 +26,11 @@ from cli_anything.pdf2zh.utils import pdf2zh_backend as backend
 # ── Fallback chain ─────────────────────────────────────────────────────
 
 
-# When the default service (minimax) is requested but the EXE fails — e.g.
+# When the default service (mimo) is requested but the EXE fails — e.g.
 # the patch isn't installed, the API key isn't configured, or the API is
 # down — retry once with the next service in the chain. The chain only
 # applies when the user did not explicitly pick a non-default service.
-DEFAULT_FALLBACK_CHAIN: List[str] = ["minimax", "google"]
+DEFAULT_FALLBACK_CHAIN: List[str] = ["mimo", "google"]
 
 
 def _next_fallback(current: str) -> Optional[str]:
@@ -52,7 +52,7 @@ class TranslateOptions:
 
     lang_in: str = "en"
     lang_out: str = "zh"
-    service: str = "minimax"
+    service: str = "mimo"
     thread: int = 4
     pages: str = ""
     babeldoc: bool = False
@@ -147,9 +147,9 @@ def translate_files(
     """Run the EXE on one or more files and return a JSON-friendly result.
 
     ``env_overrides`` is merged on top of the process env; pass API keys
-    here (e.g. ``{"MINIMAX_API_KEY": "..."}``).
+    here (e.g. ``{"MIMO_API_KEY": "..."}``).
 
-    If ``options.service`` is the default ``minimax`` and the first attempt
+    If ``options.service`` is the default ``mimo`` and the first attempt
     fails (non-zero exit), the call is retried once with the next service
     in :data:`DEFAULT_FALLBACK_CHAIN` (currently ``google``). The returned
     dict carries ``fallback_used`` / ``fallback_from`` / ``fallback_to`` /

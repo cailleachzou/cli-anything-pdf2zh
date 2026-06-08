@@ -51,7 +51,7 @@ C:\Program Files\pdf2zh\
 **Critical insight for the harness:** the EXE at `build/pdf2zh.exe` resolves
 `pdf2zh.*` modules from `build/site-packages/`. **Editing files in
 `build/site-packages/pdf2zh/` changes the EXE's runtime behavior.** This is how
-we add a custom translator (MiniMax) without rebuilding the bundle.
+we add a custom translator (Xiaomi MiMo) without rebuilding the bundle.
 
 ---
 
@@ -122,32 +122,34 @@ List of services (from `pdf2zh.py:yadt_main`):
 | `deepseek` | Deepseek | Yes |
 | `openailiked` | OpenAI-compatible | Yes |
 | `qwenmt` | QwenMT (DashScope) | Yes |
-| **`minimax`** *(added by harness patch)* | **MiniMax (OpenAI-compat)** | **Yes** |
+| **`mimo`** *(added by harness patch)* | **Xiaomi MiMo (OpenAI-compat)** | **Yes** |
 
 ---
 
-## 5. The MiniMax translator (added by harness)
+## 5. The Xiaomi MiMo translator (added by harness)
 
-MiniMax is an OpenAI-compatible chat-completions API. We add a new
-`MiniMaxTranslator` class to the bundled `translator.py` that mirrors
-`OpenAITranslator` with MiniMax's specific defaults:
+Xiaomi MiMo is an OpenAI-compatible chat-completions API. We add a new
+`MiMoTranslator` class to the bundled `translator.py` that mirrors
+`OpenAITranslator` with MiMo's specific defaults:
 
 ```python
-class MiniMaxTranslator(OpenAITranslator):
-    name = "minimax"
+class MiMoTranslator(OpenAITranslator):
+    name = "mimo"
     envs = {
-        "MINIMAX_BASE_URL": "https://api.minimaxi.com/v1",
-        "MINIMAX_API_KEY":  None,
-        "MINIMAX_MODEL":    "MiniMax-Text-01",
+        "MIMO_BASE_URL": "https://token-plan-cn.xiaomimimo.com/v1",
+        "MIMO_API_KEY":  None,
+        "MIMO_MODEL":    "mimo-v2.5-pro",
     }
     CustomPrompt = True
 ```
 
+The API key falls back to `ANTHROPIC_AUTH_TOKEN` env var if `MIMO_API_KEY` is not set.
+
 The harness ships a `patch/install_patch.py` that:
 1. Locates `build/site-packages/pdf2zh/translator.py`
-2. Appends `MiniMaxTranslator` if not already present (idempotent)
+2. Appends `MiMoTranslator` if not already present (idempotent)
 3. Locates `build/site-packages/pdf2zh/pdf2zh.py` and registers
-   `MiniMaxTranslator` in the `yadt_main` translator list (idempotent)
+   `MiMoTranslator` in the `yadt_main` translator list (idempotent)
 
 The patch is reversible (`patch uninstall` removes the class and unregisters it).
 
@@ -180,7 +182,7 @@ inspects them.
 | `config`   | Read/write/delete the `PDFMathTranslate/config.json` keys |
 | `inspect`  | Inspect output `*-mono.pdf` / `*-dual.pdf` files |
 | `cache`    | Query / clear the SQLite translation cache |
-| `patch`    | Install / uninstall the MiniMax translator into the EXE |
+| `patch`    | Install / uninstall the Xiaomi MiMo translator into the EXE |
 | `mcp`      | Launch the EXE's MCP server (pass-through) |
 | `repl`     | Default interactive mode |
 

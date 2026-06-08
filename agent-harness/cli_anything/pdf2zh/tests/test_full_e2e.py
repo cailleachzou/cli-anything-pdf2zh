@@ -10,9 +10,9 @@ require:
 Tests are SKIPPED, not failed, when the environment is hostile:
 
 * ``PDF2ZH_SKIP_GOOGLE=1``  — skip Google tests
-* ``PDF2ZH_SKIP_MINIMAX=1`` — skip MiniMax tests
-* No MINIMAX_API_KEY in ``~/.config/PDFMathTranslate/config.json`` — skip
-  the MiniMax test
+* ``PDF2ZH_SKIP_MIMO=1`` — skip MiMo tests
+* No MIMO_API_KEY / ANTHROPIC_AUTH_TOKEN in ``~/.config/PDFMathTranslate/config.json`` — skip
+  the MiMo test
 * No pymupdf — skip the synthetic-PDF tests
 * No network at runtime — caught by subprocess timeout / exit code
 
@@ -56,8 +56,13 @@ def _make_synthetic_pdf(path: Path, *, pages: int = 1, text: str = "Hello world.
     doc.close()
 
 
-def _read_minimax_key() -> Optional[str]:
-    """Read the stored MINIMAX_API_KEY from the user's pdf2zh config."""
+def _read_mimo_key() -> Optional[str]:
+    """Read the stored MIMO_API_KEY from the user's pdf2zh config.
+    Falls back to ANTHROPIC_AUTH_TOKEN env var."""
+    import os as _os
+    key = _os.environ.get("ANTHROPIC_AUTH_TOKEN")
+    if key:
+        return key
     cfg = config_mod.CONFIG_PATH
     if not cfg.is_file():
         return None
@@ -66,8 +71,8 @@ def _read_minimax_key() -> Optional[str]:
     except json.JSONDecodeError:
         return None
     for t in data.get("translators", []):
-        if t.get("name") == "minimax":
-            return (t.get("envs") or {}).get("MINIMAX_API_KEY")
+        if t.get("name") == "mimo":
+            return (t.get("envs") or {}).get("MIMO_API_KEY")
     return None
 
 
@@ -159,22 +164,22 @@ class TestE2EGoogle:
         )
 
 
-# ── MiniMax translate E2E ────────────────────────────────────────────
+# ── Xiaomi MiMo translate E2E ─────────────────────────────────────────
 
 
-class TestE2EMiniMax:
+class TestE2EMiMo:
     @pytest.fixture(autouse=True)
     def skip_flag(self):
-        if os.environ.get("PDF2ZH_SKIP_MINIMAX", "").strip() == "1":
-            pytest.skip("PDF2ZH_SKIP_MINIMAX=1")
+        if os.environ.get("PDF2ZH_SKIP_MIMO", "").strip() == "1":
+            pytest.skip("PDF2ZH_SKIP_MIMO=1")
         # Make sure the harness has the API key
-        self._api_key = _read_minimax_key()
+        self._api_key = _read_mimo_key()
         if not self._api_key:
             pytest.skip(
-                "no MINIMAX_API_KEY in ~/.config/PDFMathTranslate/config.json. "
-                "Run: cli-anything-pdf2zh config set-key minimax MINIMAX_API_KEY <key>"
+                "no MIMO_API_KEY or ANTHROPIC_AUTH_TOKEN found. "
+                "Run: cli-anything-pdf2zh config set-key mimo MIMO_API_KEY <key>"
             )
-        # Make sure the MiniMax translator is installed in the EXE.
+        # Make sure the MiMo translator is installed in the EXE.
         # Earlier tests (TestPatch in test_core.py) install/uninstall the
         # patch repeatedly. Re-install it here so this fixture is robust.
         from cli_anything.pdf2zh.core import patch as patch_mod
@@ -185,28 +190,28 @@ class TestE2EMiniMax:
         except pytest.skip.Exception:
             raise
         except BaseException as e:  # noqa: BLE001
-            pytest.skip(f"could not install MiniMax patch: {e}")
+            pytest.skip(f"could not install MiMo patch: {e}")
         s = patch_mod.status()
         if not s.get("installed"):
-            pytest.skip("MiniMax translator not installed after attempt")
+            pytest.skip("MiMo translator not installed after attempt")
 
     def test_translate_english_to_chinese(self, tmp_path):
         in_pdf = tmp_path / "doc.pdf"
         out_dir = tmp_path / "out"
         _make_synthetic_pdf(in_pdf, text="The quick brown fox.")
 
-        # Read all MiniMax envs and pass them through to the EXE
+        # Read all MiMo envs and pass them through to the EXE
         cfg = config_mod.all_entries()
         envs = {}
         for t in cfg.get("translators", []):
-            if t.get("name") == "minimax":
+            if t.get("name") == "mimo":
                 envs = dict(t.get("envs") or {})
                 break
 
         res = backend.run_translate(
             [str(in_pdf)],
             output=str(out_dir),
-            service="minimax",
+            service="mimo",
             lang_in="en",
             lang_out="zh",
             thread=2,
@@ -217,7 +222,7 @@ class TestE2EMiniMax:
 
         if res.exit_code != 0:
             pytest.skip(
-                f"minimax translate failed (likely network/key): "
+                f"mimo translate failed (likely network/key): "
                 f"stderr={res.stderr_tail[-300:]}"
             )
 
@@ -231,9 +236,9 @@ class TestE2EMiniMax:
             assert f.read(5) == b"%PDF-"
         assert dual.stat().st_size > mono.stat().st_size
         print(
-            f"\n  minimax mono: {mono} ({mono.stat().st_size:,} bytes)"
-            f"\n  minimax dual: {dual} ({dual.stat().st_size:,} bytes)"
-            f"\n  duration:     {res.duration_s:.2f}s"
+            f"\n  mimo mono: {mono} ({mono.stat().st_size:,} bytes)"
+            f"\n  mimo dual: {dual} ({dual.stat().st_size:,} bytes)"
+            f"\n  duration:  {res.duration_s:.2f}s"
         )
 
 
@@ -273,7 +278,7 @@ class TestCLISubprocess:
         r = self._run(["--json", "services", "list"])
         assert r.returncode == 0
         data = json.loads(r.stdout)
-        assert any(s["name"] == "minimax" for s in data)
+        assert any(s["name"] == "mimo" for s in data)
 
     def test_json_patch_status(self):
         r = self._run(["--json", "patch", "status"])
@@ -292,12 +297,12 @@ class TestCLISubprocess:
         assert data["size_bytes"] > 0
 
     def test_json_config_show_translator(self):
-        r = self._run(["--json", "config", "show-translator", "minimax"])
+        r = self._run(["--json", "config", "show-translator", "mimo"])
         # If the translator isn't configured, this exits 1; treat as soft skip
         if r.returncode != 0:
-            pytest.skip("minimax translator not configured")
+            pytest.skip("mimo translator not configured")
         data = json.loads(r.stdout)
-        assert data["name"] == "minimax"
+        assert data["name"] == "mimo"
         # Don't leak the secret value into stdout
         envs = data.get("envs", {})
         for k, v in envs.items():
